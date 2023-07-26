@@ -1,6 +1,6 @@
 import moment from "moment";
 
-class Helpers {
+export class Helpers {
   dateShortFormat(date: string) {
     return moment(date).format("DD/MM/YYYY");
   }
@@ -66,7 +66,3 @@ class Helpers {
     return formatter;
   }
 }
-
-export default (_context: any, inject: any) => {
-  inject("helpers", new Helpers());
-};

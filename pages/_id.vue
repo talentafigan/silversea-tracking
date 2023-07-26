@@ -17,6 +17,18 @@
         >
           <v-row class="ma-0 pa-0 w-full" dense no-gutters>
             <v-col cols="12">
+              <div class="d-flex flex-column align-end w-full">
+                <span
+                  @click="onClickPrint"
+                  class="primary--text pa-2"
+                  style="cursor: pointer"
+                  >Print Out</span
+                >
+              </div>
+            </v-col>
+          </v-row>
+          <v-row class="ma-0 pa-0 w-full" dense no-gutters>
+            <v-col cols="12">
               <div class="d-flex flex-column align-center w-full">
                 <img
                   style="width: 100px"
@@ -73,12 +85,12 @@
                     >
                       <td class="text-left">
                         {{
-                          $helpers.dateShortFormat(item.estimateDepartureDate)
+                          helpers.dateShortFormat(item.estimateDepartureDate)
                         }}
                       </td>
                       <td>{{ item.portLoading }}</td>
                       <td>
-                        {{ $helpers.dateShortFormat(item.estimateArivalDate) }}
+                        {{ helpers.dateShortFormat(item.estimateArivalDate) }}
                       </td>
                       <td>{{ item.portDischarge }}</td>
                       <td class="text-right">{{ item.transhipmentPort }}</td>
@@ -117,9 +129,9 @@
                       :key="index"
                     >
                       <td class="text-left">
-                        {{ $helpers.dateShortFormat(item.departureDate) }}
+                        {{ helpers.dateShortFormat(item.departureDate) }}
                       </td>
-                      <td>{{ $helpers.dateShortFormat(item.arivalDate) }}</td>
+                      <td>{{ helpers.dateShortFormat(item.arivalDate) }}</td>
                       <td>{{ item.vesselName }}</td>
                       <td class="text-right">{{ item.voyageNumber }}</td>
                     </tr>
@@ -177,40 +189,57 @@
 </template>
 
 <script lang="ts">
-import { BookingApi } from "@/api/booking.api";
-import Vue from "vue";
-import Component from "vue-class-component";
-import { BookingInterface } from "@/types/interface";
+import { Context } from "@nuxt/types";
+import { BookingApi } from "~/api/booking.api";
+import { Helpers } from "~/plugins/helpers";
+import { BookingInterface } from "~/types/interface";
+export default {
+  async asyncData(context: Context) {
+    const bookingApi = new BookingApi();
 
-@Component
-export default class Home extends Vue {
-  bookingApi = new BookingApi();
-  $helpers: any;
-  isLoading = false;
-
-  bookingDetail = {} as BookingInterface;
-
-  async fetchTracking() {
-    this.isLoading = true;
-    try {
-      const response = await this.bookingApi.getTracking(this.$route.params.id);
-      if (response.data.status !== "SUCCESS") {
-        alert(response.data.message);
-        return;
+    const fetchTracking = async () => {
+      try {
+        const response = await bookingApi.getTracking(context.route.params.id);
+        if (response.data.status !== "SUCCESS") {
+          alert(response.data.message);
+          return;
+        }
+        return response.data.data;
+      } catch (error: any) {
+        const errorMessage = error.response
+          ? error.response.message
+          : "System Error, please contact our team";
+        alert(errorMessage);
       }
-      this.bookingDetail = response.data.data;
-    } catch (error: any) {
-      const errorMessage = error.response
-        ? error.response.message
-        : "System Error, please contact our team";
-      alert(errorMessage);
-    } finally {
-      this.isLoading = false;
-    }
-  }
+    };
 
-  mounted() {
-    this.fetchTracking();
-  }
-}
+    let bookingDetail: BookingInterface = await fetchTracking();
+
+    return {
+      bookingDetail,
+    };
+  },
+  data() {
+    return {
+      helpers: new Helpers(),
+    };
+  },
+  methods: {
+    async onClickPrint() {
+      try {
+        const response = await new BookingApi().getPrint(this.$route.params.id);
+        if (response.data.status !== "SUCCESS") {
+          alert(response.data.message);
+          return;
+        }
+        console.log(response);
+      } catch (error: any) {
+        const errorMessage = error.response
+          ? error.response.message
+          : "System Error, please contact our team";
+        alert(errorMessage);
+      }
+    },
+  },
+};
 </script>
